@@ -9,7 +9,7 @@ namespace AIPS
 	{
         /// <summary>
         /// Этот метод реализует прореживание в частотной области (Decimation in Frequency) при использовании Быстрого преобразования Фурье (FFT).
-		/// Он принимает в качестве параметров массив комплексных чисел "sample" и функцию "getRotor", возвращающую массив комплексных чисел для 
+		/// Он принимает в качестве параметров массив комплексных чисел "sample" и функцию "getOmega", возвращающую массив комплексных чисел для 
 		/// вычисления отношения между элементами при прореживании.
 		/// Перестановка выполняется на каждом уровне рекурсии, когда массив делится на две части.
 		/// Эти части передаются в рекурсивные вызовы метода DecimationInFrequency, и на каждом уровне массив делится пополам и элементы переставляются
@@ -55,7 +55,7 @@ namespace AIPS
 		/// </summary>
 		/// <param name="sample"></param>
 		/// <returns></returns>
-		public static Complex[] GetTransform(this IEnumerable<Complex> sample)
+		public static Complex[] GetFFTransform(this IEnumerable<Complex> sample)
 		{
 			var workSample = sample.ToArray();
 			var omega = DirectOmega ;
@@ -99,5 +99,28 @@ namespace AIPS
 				omega[i] = Complex.Pow(omegaBase, i);
 			return omega;
 		}
-	} 
+        public static Complex[] GetDFTTransform(this IEnumerable<Complex> sample)
+        {
+            var workSample = sample.ToArray();
+            int N = workSample.Length;
+
+            Complex[] X = new Complex[N];
+            for (int k = 0; k < N; k++)
+            {
+                Complex sum = 0;
+                for (int n = 0; n < N; n++)
+                {
+                    sum += workSample[n] * Complex.Exp(-2 * Math.PI * Complex.ImaginaryOne * k * n / N);
+                }
+                X[k] = sum;
+            }
+
+            // Нормализуем результат
+            double normalizationFactor = N / 2;
+            for (var i = 0; i < X.Length; i++)
+                X[i] /= normalizationFactor;
+
+            return X;
+        }
+    } 
 }

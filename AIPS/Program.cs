@@ -13,7 +13,7 @@ class Program
         var signalComplex = signal.Select(sig => new Complex(sig, 0))
                           .ToArray();
 
-        var result = Butterfly.GetTransform(signalComplex)
+        var result = Butterfly.GetDFTTransform(signalComplex)
             .Select(compl => Complex.Abs(compl))
             .Take(7)
             .Select(modulo => Math.Round(modulo)); 

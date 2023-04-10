@@ -85,6 +85,9 @@ namespace AIPS
 			var num5 = Math.Pow(num2, y2) * Math.Pow(Math.E, -num1 * num3);
 			return new(num5 * Math.Cos(num4), num5 * Math.Sin(num4));
 		}
-		public static Complex Pow(Complex value, double power) => Pow(value, new Complex(power));	
-	}
+        public static Complex FromPolarCoordinates(double magnitude, double phase) =>
+            new(magnitude * Math.Cos(phase), magnitude * Math.Sin(phase));
+        public static Complex Pow(Complex value, double power) => Pow(value, new Complex(power));
+        public static Complex Exp(Complex value) => FromPolarCoordinates(Math.Exp(value.Real), value.Imaginary);
+    }
 }
