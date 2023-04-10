@@ -7,68 +7,97 @@ namespace AIPS
 {
 	public static partial class Butterfly
 	{
-		private static void DecimationInFrequency(ref Complex[] sample, System.Func<int, Complex[]> getRotor)
+        /// <summary>
+        /// Этот метод реализует прореживание в частотной области (Decimation in Frequency) при использовании Быстрого преобразования Фурье (FFT).
+		/// Он принимает в качестве параметров массив комплексных чисел "sample" и функцию "getRotor", возвращающую массив комплексных чисел для 
+		/// вычисления отношения между элементами при прореживании.
+		/// Перестановка выполняется на каждом уровне рекурсии, когда массив делится на две части.
+		/// Эти части передаются в рекурсивные вызовы метода DecimationInFrequency, и на каждом уровне массив делится пополам и элементы переставляются
+		/// в соответствии с двоично-инверсной последовательностью.
+		/// Таким образом, метод DecimationInFrequency содержит неявную реализацию двоично-инверсной перестановки элементов входного массива.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="getOmega"></param>
+        private static void DecimationInFrequency(ref Complex[] input, Func<int, Complex[]> getOmega)
 		{
-			if (sample.Length < 2) return;
-			var length = sample.Length / 2;
+			if (input.Length < 2) return;
+			var length = input.Length / 2;
 
-			var sampleA = new Complex[length];
-			var sampleB = new Complex[length];
-			var rotor = getRotor(length);
+            //разбивает входной массив на две части и создает два новых массива
+			// для хранения результата преобразования Фурье каждой части.
+            var part1 = new Complex[length];
+			var part2 = new Complex[length];
+			var omaga = getOmega(length);
 
-			for (int i = 0, j = length; i < length; i++, j++)
+            // Вычисляет преобразование Фурье для каждой из двух частей входного массива,
+            // используя поворотные множители, вычисленные заранее.
+            for (int i = 0, j = length; i < length; i++, j++)
 			{
-				var a = sample[i];
-				var b = sample[j];
+				var a = input[i];
+				var b = input[j];
 
-				sampleA[i] = a + b;
-				sampleB[i] = (a - b) * rotor[i];
+				part1[i] = a + b;
+				part2[i] = (a - b) * omaga[i];
 			}
+            // Рекурсивно вызывает алгоритм для каждой из двух частей.
+            DecimationInFrequency(ref part1, getOmega);
+			DecimationInFrequency(ref part2, getOmega);
 
-			DecimationInFrequency(ref sampleA, getRotor);
-			DecimationInFrequency(ref sampleB, getRotor);
-
-			for (int i = 0, j = 0; i < length; i++) // j += 2
+            // Собирает результаты преобразования Фурье из двух частей входного массива.
+            for (int i = 0, j = 0; i < length; i++) // j += 2
 			{
-				sample[j++] = sampleA[i];
-				sample[j++] = sampleB[i];
+				input[j++] = part1[i];
+				input[j++] = part2[i];
 			}
 		}
+		/// <summary>
+		/// Преобразование Фурье, нормализация
+		/// </summary>
+		/// <param name="sample"></param>
+		/// <returns></returns>
 		public static Complex[] GetTransform(this IEnumerable<Complex> sample)
 		{
 			var workSample = sample.ToArray();
-			var rotors = DirectRotors ;
+			var omega = DirectOmega ;
 
-			Complex[] getRotor(int length)
+			Complex[] getOmega(int length)
 			{
-				if (rotors.TryGetValue(length, out var rotor))
+				if (omega.TryGetValue(length, out var rotor))
 					return rotor;
 
-				lock (rotors)
+				lock (omega)
 				{
-					if (rotors.TryGetValue(length, out rotor))
+					if (omega.TryGetValue(length, out rotor))
 						return rotor;
-					return rotors[length] = GenerateRotor(length);
+					return omega[length] = GetOmega(length);
 				}
 			};
-
-			DecimationInFrequency(ref workSample, getRotor);
-
+            // Вычисляем преобразование Фурье
+            DecimationInFrequency(ref workSample, getOmega);
+ 			
+            // Нормализуем результат
 			double normalizationFactor =  workSample.Length / 2 ;
 			for (var i = 0; i < workSample.Length; i++)
 				workSample[i] /= normalizationFactor;
 
 			return workSample;
 		}
-		static readonly Dictionary<int, Complex[]> DirectRotors = new();
-		static Complex[] GenerateRotor(int length)
+		static readonly Dictionary<int, Complex[]> DirectOmega = new();
+        /// <summary>
+        /// Метод вычисляет и возвращает массив Complex чисел, 
+		/// которые представляют собой корни из единицы - так называемые "омега-числа".
+		/// Используется для преобразования последовательности данных в спектральное представление.
+        /// </summary>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        static Complex[] GetOmega(int length)
 		{
             var abs = -(PI / length) ;
-            var rotorBase = new Complex(Cos(abs), Sin(abs));
-			var rotor = new Complex[length];
+            var omegaBase = new Complex(Cos(abs), Sin(abs));
+			var omega = new Complex[length];
 			for (var i = 0; i < length; i++)
-				rotor[i] = Complex.Pow(rotorBase, i);
-			return rotor;
+				omega[i] = Complex.Pow(omegaBase, i);
+			return omega;
 		}
 	} 
 }
