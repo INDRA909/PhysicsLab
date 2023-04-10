@@ -87,7 +87,8 @@ namespace AIPS
 		}
         public static Complex FromPolarCoordinates(double magnitude, double phase) =>
             new(magnitude * Math.Cos(phase), magnitude * Math.Sin(phase));
-        public static Complex Pow(Complex value, double power) => Pow(value, new Complex(power));
         public static Complex Exp(Complex value) => FromPolarCoordinates(Math.Exp(value.Real), value.Imaginary);
+        public static Complex Pow(Complex value, double power) => Pow(value, new Complex(power));
+        
     }
 }

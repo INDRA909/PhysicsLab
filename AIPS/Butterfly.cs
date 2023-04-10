@@ -39,7 +39,8 @@ namespace AIPS
 				part1[i] = a + b;
 				part2[i] = (a - b) * omaga[i];
 			}
-            // Рекурсивно вызывает алгоритм для каждой из двух частей.
+
+            // Рекурсивный вызов функции для вычисления ДПФ для четных и нечетных элементов
             DecimationInFrequency(ref part1, getOmega);
 			DecimationInFrequency(ref part2, getOmega);
 
@@ -57,7 +58,7 @@ namespace AIPS
 		/// <returns></returns>
 		public static Complex[] GetFFTransform(this IEnumerable<Complex> sample)
 		{
-			var workSample = sample.ToArray();
+			var input = sample.ToArray();
 			var omega = DirectOmega ;
 
 			Complex[] getOmega(int length)
@@ -73,14 +74,14 @@ namespace AIPS
 				}
 			};
             // Вычисляем преобразование Фурье
-            DecimationInFrequency(ref workSample, getOmega);
+            DecimationInFrequency(ref input, getOmega);
  			
             // Нормализуем результат
-			double normalizationFactor =  workSample.Length / 2 ;
-			for (var i = 0; i < workSample.Length; i++)
-				workSample[i] /= normalizationFactor;
+			double normalizationFactor =  input.Length / 2 ;
+			for (var i = 0; i < input.Length; i++)
+				input[i] /= normalizationFactor;
 
-			return workSample;
+			return input;
 		}
 		static readonly Dictionary<int, Complex[]> DirectOmega = new();
         /// <summary>
@@ -99,18 +100,27 @@ namespace AIPS
 				omega[i] = Complex.Pow(omegaBase, i);
 			return omega;
 		}
+		/// <summary>
+		/// Метод ДПФ
+		/// </summary>
+		/// <param name="sample"></param>
+		/// <returns></returns>
         public static Complex[] GetDFTTransform(this IEnumerable<Complex> sample)
         {
-            var workSample = sample.ToArray();
-            int N = workSample.Length;
-
+            var input = sample.ToArray();
+            int N = input.Length;
+            // Создаем массив для хранения результатов ДПФ
             Complex[] X = new Complex[N];
+            // Вычисляем ДПФ для каждого элемента
             for (int k = 0; k < N; k++)
             {
                 Complex sum = 0;
+                // Вычисляем сумму для текущего элемента
                 for (int n = 0; n < N; n++)
                 {
-                    sum += workSample[n] * Complex.Exp(-2 * Math.PI * Complex.ImaginaryOne * k * n / N);
+                    //Для каждого элемента X[k] вычисляется сумма, которая состоит из произведения каждого элемента входного сигнала
+					//workSample[n] на поворотный множитель Complex.Exp(-2 * Math.PI * Complex.ImaginaryOne * k * n / N).
+                    sum += input[n] * Complex.Exp(-2 * Math.PI * Complex.ImaginaryOne * k * n / N);
                 }
                 X[k] = sum;
             }
