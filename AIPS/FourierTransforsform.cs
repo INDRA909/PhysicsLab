@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
+﻿using System.Numerics;
 using static System.Math;
 
 namespace AIPS
 {
-	public static partial class Butterfly
+	public static partial class FourierTransforsform
 	{
         /// <summary>
         /// Этот метод реализует прореживание в частотной области (Decimation in Frequency) при использовании Быстрого преобразования Фурье (FFT).
@@ -27,7 +25,7 @@ namespace AIPS
 			// для хранения результата преобразования Фурье каждой части.
             var part1 = new Complex[length];
 			var part2 = new Complex[length];
-			var omaga = getOmega(length);
+			var omega = getOmega(length);
 
             // Вычисляет преобразование Фурье для каждой из двух частей входного массива,
             // используя поворотные множители, вычисленные заранее.
@@ -37,7 +35,7 @@ namespace AIPS
 				var b = input[j];
 
 				part1[i] = a + b;
-				part2[i] = (a - b) * omaga[i];
+				part2[i] = (a - b) * omega[i];
 			}
 
             // Рекурсивный вызов функции для вычисления ДПФ для четных и нечетных элементов
@@ -59,7 +57,7 @@ namespace AIPS
 		public static Complex[] GetFFTransform(this IEnumerable<Complex> sample)
 		{
 			var input = sample.ToArray();
-			var omega = DirectOmega ;
+			var omega = DirectOmega;
 
 			Complex[] getOmega(int length)
 			{
